@@ -29,6 +29,7 @@ jobs:
           node --check server/src/rooms.js
           node --check server/src/index.js
           node --check client/public/src/main.js
+          node --check client/public/src/waiting-room-connection.js
 
       - name: Smoke-test server
         run: |
