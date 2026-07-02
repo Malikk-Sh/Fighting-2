@@ -8,13 +8,13 @@ const express = require('express');
 const { Server } = require('socket.io');
 const { RoomManager } = require('./rooms');
 const {
-  TICK_RATE,
-  SNAPSHOT_RATE,
-  ARENA_WIDTH,
-  PLAYER_SPEED,
-  PLAYER_HALF_WIDTH,
-  MIN_PLAYER_GAP
-} = require('./constants');
+  startMatch,
+  updateRoom,
+  resolveAttack,
+  requestRematch,
+  serializeRoom
+} = require('./match');
+const { TICK_RATE, SNAPSHOT_RATE } = require('./constants');
 
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 3000);
@@ -41,68 +41,32 @@ app.get('*', (_request, response) => {
   response.sendFile(path.join(publicDir, 'index.html'));
 });
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+function emitServerError(socket, code, message) {
+  socket.emit('server:error', { code, message });
 }
 
-function serializeRoom(room) {
-  return {
-    code: room.code,
-    phase: room.phase,
-    serverTime: Date.now(),
-    players: room.players.map((player) => ({
-      slot: player.slot,
-      x: player.x,
-      direction: player.direction,
-      facing: player.facing,
-      connected: player.connected
-    }))
-  };
-}
+function leaveCurrentRoom(socket, reason) {
+  const result = rooms.removeSocket(socket.id);
+  if (!result) return null;
 
-function updateRoom(room, deltaSeconds) {
-  if (room.phase !== 'playing' || room.players.length !== 2) return;
+  socket.leave(result.room.code);
 
-  const playerOne = room.players.find((player) => player.slot === 1);
-  const playerTwo = room.players.find((player) => player.slot === 2);
-  if (!playerOne || !playerTwo) return;
-
-  playerOne.x += playerOne.direction * PLAYER_SPEED * deltaSeconds;
-  playerTwo.x += playerTwo.direction * PLAYER_SPEED * deltaSeconds;
-
-  const minX = PLAYER_HALF_WIDTH;
-  const maxX = ARENA_WIDTH - PLAYER_HALF_WIDTH;
-  playerOne.x = clamp(playerOne.x, minX, maxX);
-  playerTwo.x = clamp(playerTwo.x, minX, maxX);
-
-  if (playerTwo.x - playerOne.x < MIN_PLAYER_GAP) {
-    const midpoint = (playerOne.x + playerTwo.x) / 2;
-    playerOne.x = midpoint - MIN_PLAYER_GAP / 2;
-    playerTwo.x = midpoint + MIN_PLAYER_GAP / 2;
-
-    if (playerOne.x < minX) {
-      playerOne.x = minX;
-      playerTwo.x = minX + MIN_PLAYER_GAP;
-    }
-
-    if (playerTwo.x > maxX) {
-      playerTwo.x = maxX;
-      playerOne.x = maxX - MIN_PLAYER_GAP;
+  if (result.opponent) {
+    const opponentSocket = io.sockets.sockets.get(result.opponent.socketId);
+    if (opponentSocket) {
+      opponentSocket.leave(result.room.code);
+      opponentSocket.emit('opponent:disconnected', { reason });
     }
   }
 
-  playerOne.facing = 1;
-  playerTwo.facing = -1;
-}
-
-function emitServerError(socket, code, message) {
-  socket.emit('server:error', { code, message });
+  return result;
 }
 
 io.on('connection', (socket) => {
   socket.emit('connection:ready', { socketId: socket.id, serverTime: Date.now() });
 
   socket.on('room:create', () => {
+    leaveCurrentRoom(socket, 'opponent_started_new_room');
     const room = rooms.createRoom(socket.id);
     socket.join(room.code);
     socket.emit('room:created', { code: room.code, slot: 1 });
@@ -110,6 +74,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('room:join', (payload = {}) => {
+    leaveCurrentRoom(socket, 'opponent_joined_another_room');
     const result = rooms.joinRoom(socket.id, payload.code);
 
     if (result.error === 'ROOM_NOT_FOUND') {
@@ -125,7 +90,12 @@ io.on('connection', (socket) => {
     const { room, player } = result;
     socket.join(room.code);
     socket.emit('room:joined', { code: room.code, slot: player.slot });
+    startMatch(room, Date.now());
     io.to(room.code).emit('match:start', serializeRoom(room));
+  });
+
+  socket.on('room:leave', () => {
+    leaveCurrentRoom(socket, 'opponent_left');
   });
 
   socket.on('player:input', (payload = {}) => {
@@ -137,10 +107,75 @@ io.on('connection', (socket) => {
     const sequence = Number(payload.sequence);
 
     if (![-1, 0, 1].includes(direction)) return;
-    if (!Number.isSafeInteger(sequence) || sequence < player.inputSequence) return;
+    if (!Number.isSafeInteger(sequence) || sequence <= player.inputSequence) return;
 
     player.direction = direction;
     player.inputSequence = sequence;
+  });
+
+  socket.on('player:attack', () => {
+    const room = rooms.getRoomBySocket(socket.id);
+    const player = rooms.getPlayerBySocket(socket.id);
+    if (!room || !player) return;
+
+    const result = resolveAttack(room, player.slot, Date.now());
+
+    if (!result.accepted) {
+      socket.emit('match:attackRejected', {
+        reason: result.reason,
+        readyAt: result.readyAt || null,
+        serverTime: Date.now()
+      });
+      return;
+    }
+
+    io.to(room.code).emit('match:attack', {
+      matchId: room.matchId,
+      attackerSlot: result.attackerSlot,
+      targetSlot: result.targetSlot,
+      startedAt: result.startedAt,
+      nextAttackAt: result.nextAttackAt,
+      hit: result.hit
+    });
+
+    if (result.hit) {
+      io.to(room.code).emit('match:hit', {
+        matchId: room.matchId,
+        attackerSlot: result.attackerSlot,
+        targetSlot: result.targetSlot,
+        targetHealth: result.targetHealth,
+        impactX: result.impactX,
+        serverTime: Date.now()
+      });
+    }
+
+    if (result.ended) {
+      io.to(room.code).emit('match:end', {
+        matchId: room.matchId,
+        winnerSlot: result.winnerSlot,
+        reason: 'health_depleted',
+        serverTime: Date.now()
+      });
+    }
+  });
+
+  socket.on('match:rematch', () => {
+    const room = rooms.getRoomBySocket(socket.id);
+    const player = rooms.getPlayerBySocket(socket.id);
+    if (!room || !player) return;
+
+    const result = requestRematch(room, player.slot, Date.now());
+    if (!result.accepted) return;
+
+    if (!result.started) {
+      io.to(room.code).emit('match:rematchPending', {
+        readySlots: result.readySlots,
+        serverTime: Date.now()
+      });
+      return;
+    }
+
+    io.to(room.code).emit('match:start', serializeRoom(room));
   });
 
   socket.on('latency:ping', (payload = {}) => {
@@ -151,16 +186,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    const result = rooms.removeSocket(socket.id);
-    if (!result || !result.opponent) return;
-
-    const opponentSocket = io.sockets.sockets.get(result.opponent.socketId);
-    if (opponentSocket) {
-      opponentSocket.leave(result.room.code);
-      opponentSocket.emit('opponent:disconnected', {
-        reason: 'connection_lost'
-      });
-    }
+    leaveCurrentRoom(socket, 'connection_lost');
   });
 });
 
@@ -177,7 +203,7 @@ setInterval(() => {
 
 setInterval(() => {
   for (const room of rooms.rooms.values()) {
-    if (room.phase === 'playing') {
+    if (room.phase === 'playing' || room.phase === 'finished') {
       io.to(room.code).emit('match:snapshot', serializeRoom(room));
     }
   }

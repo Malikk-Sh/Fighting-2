@@ -9,5 +9,8 @@ module.exports = Object.freeze({
   MIN_PLAYER_GAP: 92,
   SPAWN_P1_X: 260,
   SPAWN_P2_X: 740,
-  ROOM_CODE_LENGTH: 4
+  ROOM_CODE_LENGTH: 4,
+  MAX_HEALTH: 2,
+  ATTACK_COOLDOWN_MS: 3000,
+  ATTACK_RANGE: 150
 });

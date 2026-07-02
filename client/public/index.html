@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#09090b">
   <title>Fighting-2</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/combat.css">
 </head>
 <body>
   <main id="app">
@@ -55,13 +56,33 @@
         </div>
       </header>
 
+      <div class="health-hud" aria-label="Здоровье бойцов">
+        <div class="health-side health-side-left">
+          <span class="health-name">P1</span>
+          <div class="health-pips" id="health-p1">
+            <span class="health-pip"></span>
+            <span class="health-pip"></span>
+          </div>
+        </div>
+        <div class="health-side health-side-right">
+          <div class="health-pips" id="health-p2">
+            <span class="health-pip"></span>
+            <span class="health-pip"></span>
+          </div>
+          <span class="health-name">P2</span>
+        </div>
+      </div>
+
       <div id="canvas-shell" class="canvas-shell">
         <canvas id="game-canvas" width="1000" height="560" aria-label="Игровая арена"></canvas>
         <div id="game-overlay" class="game-overlay hidden">
           <div class="overlay-card">
-            <h2 id="overlay-title">Соперник отключился</h2>
-            <p id="overlay-message">Матч завершён.</p>
-            <button id="return-lobby" class="primary-button">Вернуться в меню</button>
+            <h2 id="overlay-title">Матч завершён</h2>
+            <p id="overlay-message">Результат матча.</p>
+            <div class="overlay-actions">
+              <button id="play-again" class="primary-button hidden">Играть снова</button>
+              <button id="return-lobby" class="secondary-button">Вернуться в меню</button>
+            </div>
           </div>
         </div>
       </div>
@@ -71,18 +92,22 @@
           <button id="move-left" class="control-button movement-button" aria-label="Двигаться влево">◀</button>
           <button id="move-right" class="control-button movement-button" aria-label="Двигаться вправо">▶</button>
         </div>
-        <button id="attack-button" class="control-button attack-button" disabled>
-          <span>УДАР</span>
-          <small>этап 2</small>
+        <button id="attack-button" class="control-button attack-button" aria-label="Атаковать">
+          <span class="attack-button-content">
+            <strong>УДАР</strong>
+            <small id="attack-cooldown-label">ГОТОВ</small>
+          </span>
         </button>
       </div>
 
-      <p class="desktop-hint">Клавиатура: A / D или ← / →</p>
+      <p class="desktop-hint">Клавиатура: A / D или ← / →, пробел — удар</p>
     </section>
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/src/main.js" defer></script>
   <script src="/src/waiting-room-connection.js" defer></script>
+  <script src="/src/room-lifecycle.js" defer></script>
+  <script src="/src/combat.js" defer></script>
 </body>
 </html>
