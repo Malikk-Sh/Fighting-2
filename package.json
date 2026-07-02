@@ -1,12 +1,13 @@
 {
   "name": "fighting-2",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Mobile-first two-player web fighting game prototype",
   "main": "server/src/index.js",
   "scripts": {
     "start": "node server/src/index.js",
-    "dev": "node --watch server/src/index.js"
+    "dev": "node --watch server/src/index.js",
+    "test": "node --test server/test/*.test.js"
   },
   "engines": {
     "node": ">=18"
