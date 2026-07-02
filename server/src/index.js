@@ -45,10 +45,28 @@ function emitServerError(socket, code, message) {
   socket.emit('server:error', { code, message });
 }
 
+function leaveCurrentRoom(socket, reason) {
+  const result = rooms.removeSocket(socket.id);
+  if (!result) return null;
+
+  socket.leave(result.room.code);
+
+  if (result.opponent) {
+    const opponentSocket = io.sockets.sockets.get(result.opponent.socketId);
+    if (opponentSocket) {
+      opponentSocket.leave(result.room.code);
+      opponentSocket.emit('opponent:disconnected', { reason });
+    }
+  }
+
+  return result;
+}
+
 io.on('connection', (socket) => {
   socket.emit('connection:ready', { socketId: socket.id, serverTime: Date.now() });
 
   socket.on('room:create', () => {
+    leaveCurrentRoom(socket, 'opponent_started_new_room');
     const room = rooms.createRoom(socket.id);
     socket.join(room.code);
     socket.emit('room:created', { code: room.code, slot: 1 });
@@ -56,6 +74,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('room:join', (payload = {}) => {
+    leaveCurrentRoom(socket, 'opponent_joined_another_room');
     const result = rooms.joinRoom(socket.id, payload.code);
 
     if (result.error === 'ROOM_NOT_FOUND') {
@@ -73,6 +92,10 @@ io.on('connection', (socket) => {
     socket.emit('room:joined', { code: room.code, slot: player.slot });
     startMatch(room, Date.now());
     io.to(room.code).emit('match:start', serializeRoom(room));
+  });
+
+  socket.on('room:leave', () => {
+    leaveCurrentRoom(socket, 'opponent_left');
   });
 
   socket.on('player:input', (payload = {}) => {
@@ -163,16 +186,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    const result = rooms.removeSocket(socket.id);
-    if (!result || !result.opponent) return;
-
-    const opponentSocket = io.sockets.sockets.get(result.opponent.socketId);
-    if (opponentSocket) {
-      opponentSocket.leave(result.room.code);
-      opponentSocket.emit('opponent:disconnected', {
-        reason: 'connection_lost'
-      });
-    }
+    leaveCurrentRoom(socket, 'connection_lost');
   });
 });
 
