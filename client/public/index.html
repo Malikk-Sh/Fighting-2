@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#09090b">
+  <title>Fighting-2</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main id="app">
+    <section id="lobby-screen" class="screen active">
+      <div class="panel hero-panel">
+        <p class="eyebrow">ONLINE DUEL</p>
+        <h1>FIGHTING<span>-2</span></h1>
+        <p class="subtitle">Авторитетный сервер, комнаты по короткому коду, два устройства.</p>
+
+        <button id="create-room" class="primary-button">Создать комнату</button>
+
+        <div class="divider"><span>или</span></div>
+
+        <form id="join-form" autocomplete="off">
+          <label for="room-code">Код комнаты</label>
+          <div class="join-row">
+            <input id="room-code" name="roomCode" maxlength="4" inputmode="text" placeholder="A7K2" aria-label="Код комнаты">
+            <button class="secondary-button" type="submit">Войти</button>
+          </div>
+        </form>
+
+        <p id="lobby-message" class="message" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="waiting-screen" class="screen">
+      <div class="panel waiting-panel">
+        <p class="eyebrow">КОМНАТА СОЗДАНА</p>
+        <h2 id="waiting-code">----</h2>
+        <p>Передайте код второму игроку.</p>
+        <div class="pulse-loader" aria-hidden="true"></div>
+        <p class="muted">Ожидание соперника…</p>
+        <button id="copy-code" class="secondary-button">Копировать код</button>
+      </div>
+    </section>
+
+    <section id="game-screen" class="screen game-screen">
+      <header class="game-header">
+        <div>
+          <span class="hud-label">КОМНАТА</span>
+          <strong id="hud-room">----</strong>
+        </div>
+        <div class="connection-box">
+          <span id="connection-dot" class="connection-dot"></span>
+          <span id="connection-text">Подключено</span>
+          <span id="ping-label">-- ms</span>
+        </div>
+      </header>
+
+      <div id="canvas-shell" class="canvas-shell">
+        <canvas id="game-canvas" width="1000" height="560" aria-label="Игровая арена"></canvas>
+        <div id="game-overlay" class="game-overlay hidden">
+          <div class="overlay-card">
+            <h2 id="overlay-title">Соперник отключился</h2>
+            <p id="overlay-message">Матч завершён.</p>
+            <button id="return-lobby" class="primary-button">Вернуться в меню</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls" aria-label="Управление">
+        <div class="movement-pad">
+          <button id="move-left" class="control-button movement-button" aria-label="Двигаться влево">◀</button>
+          <button id="move-right" class="control-button movement-button" aria-label="Двигаться вправо">▶</button>
+        </div>
+        <button id="attack-button" class="control-button attack-button" disabled>
+          <span>УДАР</span>
+          <small>этап 2</small>
+        </button>
+      </div>
+
+      <p class="desktop-hint">Клавиатура: A / D или ← / →</p>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/src/main.js" defer></script>
+</body>
+</html>
