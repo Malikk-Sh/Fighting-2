@@ -27,9 +27,15 @@ jobs:
         run: |
           node --check server/src/constants.js
           node --check server/src/rooms.js
+          node --check server/src/match.js
           node --check server/src/index.js
+          node --check server/test/match.test.js
           node --check client/public/src/main.js
           node --check client/public/src/waiting-room-connection.js
+          node --check client/public/src/combat.js
+
+      - name: Run tests
+        run: npm test
 
       - name: Smoke-test server
         run: |
