@@ -1,0 +1,19 @@
+{
+  "name": "fighting-2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mobile-first two-player web fighting game prototype",
+  "main": "server/src/index.js",
+  "scripts": {
+    "start": "node server/src/index.js",
+    "dev": "node --watch server/src/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "socket.io": "^4.8.1"
+  }
+}
