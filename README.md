@@ -1,6 +1,6 @@
 # Fighting-2
 
-Mobile-first online fighting game for two devices. The current implementation includes room creation, joining by a short code, authoritative movement and combat, two health points, a three-second attack cooldown, victory/defeat screens and consensual rematches.
+Mobile-first online fighting game for two devices. The current implementation includes room creation, joining by a short code, authoritative movement and combat, two health points, a three-second attack cooldown, victory/defeat screens, consensual rematches, generated fighter sprite sheets and generated arena backgrounds.
 
 ## Stack
 
@@ -26,6 +26,8 @@ Fighting-2/
 │     └─ match.test.js
 └─ client/
    └─ public/
+      ├─ assets/
+      │  └─ generated/
       ├─ index.html
       ├─ styles.css
       ├─ combat.css
@@ -33,6 +35,7 @@ Fighting-2/
          ├─ main.js
          ├─ waiting-room-connection.js
          ├─ room-lifecycle.js
+         ├─ generated-renderer.js
          └─ combat.js
 ```
 
@@ -63,6 +66,30 @@ Run the server-side combat tests:
 ```bash
 npm test
 ```
+
+## Generated visual assets
+
+The generated renderer expects these files in `client/public/assets/generated/`:
+
+```text
+fighter-ronin.webp
+fighter-kage.webp
+effects.webp
+arena-moon.webp
+arena-shrine.webp
+arena-bloodmoon.webp
+```
+
+The fighter files are 6 × 4 sprite sheets:
+
+1. idle;
+2. walk;
+3. attack;
+4. hit reaction and knockout.
+
+The effects file is a 6 × 2 sprite sheet containing slash and impact animations. A room-code hash selects one of the three generated arenas for each match.
+
+When an asset is missing or fails to load, the client falls back to the original Canvas placeholder renderer so the network game remains testable.
 
 ## Test with two browser windows
 
@@ -171,7 +198,7 @@ Server to client:
 
 ## Next stages
 
-1. Generated sprite sheets and frame-by-frame fighter animations.
-2. Final hit sparks, slash effects, hit-stop and synthesized sound.
-3. Visual polish for the lobby, match HUD and result screens.
-4. Production deployment configuration and hosting documentation.
+1. Refine sprite timing, alignment and character scale using play-test feedback.
+2. Add final hit-stop and synthesized sound.
+3. Polish the lobby, match HUD and result screens.
+4. Add production deployment configuration and hosting documentation.
