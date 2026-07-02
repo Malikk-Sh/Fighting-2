@@ -3,7 +3,8 @@
 const {
   ROOM_CODE_LENGTH,
   SPAWN_P1_X,
-  SPAWN_P2_X
+  SPAWN_P2_X,
+  MAX_HEALTH
 } = require('./constants');
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -16,7 +17,12 @@ function createPlayer(socketId, slot) {
     direction: 0,
     facing: slot === 1 ? 1 : -1,
     connected: true,
-    inputSequence: 0
+    inputSequence: 0,
+    health: MAX_HEALTH,
+    nextAttackAt: 0,
+    lastAttackAt: 0,
+    attackSequence: 0,
+    hitSequence: 0
   };
 }
 
@@ -34,6 +40,10 @@ class RoomManager {
       code,
       phase: 'waiting',
       createdAt: Date.now(),
+      matchId: null,
+      winnerSlot: null,
+      finishedAt: null,
+      rematchReadySlots: new Set(),
       players: [createPlayer(socketId, 1)]
     };
 
@@ -58,7 +68,6 @@ class RoomManager {
 
     const player = createPlayer(socketId, 2);
     room.players.push(player);
-    room.phase = 'playing';
     this.socketToRoom.set(socketId, code);
 
     return { room, player };
@@ -117,4 +126,4 @@ class RoomManager {
   }
 }
 
-module.exports = { RoomManager };
+module.exports = { RoomManager, createPlayer };
