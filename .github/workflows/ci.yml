@@ -32,6 +32,7 @@ jobs:
           node --check server/test/match.test.js
           node --check client/public/src/main.js
           node --check client/public/src/waiting-room-connection.js
+          node --check client/public/src/room-lifecycle.js
           node --check client/public/src/combat.js
 
       - name: Run tests
