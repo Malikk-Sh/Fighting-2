@@ -1,0 +1,177 @@
+.game-screen {
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+}
+
+.health-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  pointer-events: none;
+}
+
+.health-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 128px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(10, 10, 14, 0.72);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.health-side-right {
+  justify-content: flex-end;
+}
+
+.health-name {
+  color: #d7d0c7;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.health-pips {
+  display: flex;
+  gap: 7px;
+}
+
+.health-pip {
+  width: clamp(27px, 7vw, 42px);
+  height: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 999px 3px 999px 3px;
+  background: linear-gradient(180deg, #ff4b40, #a70808);
+  box-shadow: 0 0 14px rgba(226, 33, 25, 0.32), inset 0 1px rgba(255, 255, 255, 0.35);
+  transition: opacity 220ms ease, transform 220ms ease, filter 220ms ease;
+}
+
+.health-pip.lost {
+  opacity: 0.18;
+  transform: scaleX(0.72);
+  filter: grayscale(1);
+  box-shadow: none;
+}
+
+.overlay-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.overlay-actions .secondary-button {
+  width: 100%;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.attack-button {
+  --cooldown-angle: 0deg;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: filter 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.attack-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: conic-gradient(
+    from -90deg,
+    rgba(2, 2, 4, 0.78) 0deg var(--cooldown-angle),
+    transparent var(--cooldown-angle) 360deg
+  );
+}
+
+.attack-button::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  z-index: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.attack-button-content {
+  position: relative;
+  z-index: 1;
+}
+
+.attack-button-content strong,
+.attack-button-content small {
+  display: block;
+}
+
+.attack-button.ready {
+  border-color: rgba(255, 92, 82, 0.92);
+  box-shadow: 0 0 28px rgba(226, 33, 25, 0.32), inset 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.attack-button.cooling-down {
+  filter: saturate(0.52) brightness(0.72);
+}
+
+.attack-button.attack-pulse {
+  animation: attack-pulse 180ms ease-out;
+}
+
+@keyframes attack-pulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.canvas-shell.impact {
+  animation: combat-shake 150ms linear;
+}
+
+.canvas-shell.impact::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--impact-x, 50%) 63%, rgba(255, 255, 255, 0.88), rgba(226, 33, 25, 0.45) 5%, transparent 16%);
+  animation: impact-flash 150ms ease-out forwards;
+}
+
+@keyframes combat-shake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-5px, 2px, 0); }
+  45% { transform: translate3d(5px, -2px, 0); }
+  70% { transform: translate3d(-2px, 1px, 0); }
+}
+
+@keyframes impact-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (orientation: landscape) and (max-height: 650px) {
+  .game-screen {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .game-header,
+  .health-hud,
+  .canvas-shell,
+  .desktop-hint {
+    grid-column: 1;
+  }
+
+  .controls {
+    grid-column: 2;
+    grid-row: 1 / 5;
+  }
+
+  .health-side {
+    padding: 5px 9px;
+  }
+}
