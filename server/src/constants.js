@@ -1,0 +1,13 @@
+'use strict';
+
+module.exports = Object.freeze({
+  TICK_RATE: 30,
+  SNAPSHOT_RATE: 20,
+  ARENA_WIDTH: 1000,
+  PLAYER_SPEED: 260,
+  PLAYER_HALF_WIDTH: 34,
+  MIN_PLAYER_GAP: 92,
+  SPAWN_P1_X: 260,
+  SPAWN_P2_X: 740,
+  ROOM_CODE_LENGTH: 4
+});
